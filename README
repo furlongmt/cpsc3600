@@ -1,0 +1,1 @@
+Note: To compile, use gcc -o <executable> <name of file> -lpthread
