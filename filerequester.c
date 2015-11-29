@@ -6,11 +6,11 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#define BUFSIZE 1280000
+//#define BUFSIZE 1280000
 #define FILESIZE 256
 
 int SetupTCPClientSocket(const char *host, const char *service);	/* function prototype to set up tcp socket */
-void writeFile(char *fileName, char *fileContents);					/* function prototype to write file to system */
+FILE * openFile(char *fileName);					/* function prototype to write file to system */
 
 int main(int argc, char *argv[]) {
 
@@ -43,26 +43,22 @@ int main(int argc, char *argv[]) {
 	}
 	
 
-	// Receive the string back from the server
+	// Receive the file back from the server
 	unsigned int totalBytes = 0;
-	char buffer[BUFSIZE]; // I/O Buffer
-	//fputs("Received: ", stdout);
-	
-	//while(totalBytes < strlen(filename)) {
-	numBytes = recv(sock, buffer, BUFSIZE - 1, 0);
-	if(numBytes <= 0) {
-		printf("Number of bytes in response is less than or equal to zero\n");
-		exit(1);
-	}
-	//	totalBytes += numBytes;
-	buffer[numBytes] = '\0'; // Terminate the string
-	//fputs(buffer, stdout); // Print the buffer
-	//}	
+	char buffer[FILESIZE]; // I/O Buffer
+	FILE *fp = openFile(filename);
 
-	//fprintf(stderr, "The total number of bytes is %d\n", numBytes);
-	writeFile("test.c", buffer);
+	while((numBytes = recv(sock, buffer, FILESIZE, 0)) > 0) {
+		if(numBytes <= 0) {
+			printf("Number of bytes in response is less than or equal to zero\n");
+			exit(1);
+		}
+		fwrite(buffer, 1, numBytes, fp);
+	}
+
 	fprintf(stderr, "The file %s was successfully written\n", filename);
 	close(sock);
+	close(fp);
 	exit(0);
 }
 
@@ -101,14 +97,12 @@ int SetupTCPClientSocket(const char *host, const char *service) {
   return sock;
 }
 
-void writeFile(char *fileName, char *fileContents) {
+FILE * openFile(char *fileName) {
 	FILE *fp = fopen(fileName, "w+b");
 
 	if(fp == NULL) {
 		fprintf(stderr, "Cannot save file because it won't open\n");
 	}
 
-	fwrite(fileContents, sizeof(char), strlen(fileContents), fp);
-
-	close(fp);
+	return fp;
 }
