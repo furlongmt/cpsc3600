@@ -1,1 +1,5 @@
 Note: To compile, use gcc -o <executable> <name of file> -lpthread
+
+For multiserver, run "./multiserver", if the executable is multiserver obviously, and the default port is 1999.
+
+For filerequester, run the following the command, "./filerequester 127.0.0.1 <name of file> 1999", if the excecutable is filerequester obviously.
