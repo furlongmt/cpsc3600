@@ -16,7 +16,7 @@ void sendFile(int sock, char *filename); /* send file function prototype */
 
 pthread_mutex_t  mut;
 
-#define PROTOPORT         9999          /* default protocol port number */
+#define PROTOPORT         1999          /* default protocol port number */
 #define QLEN              6             /* size of request queue        */
 #define BUFSIZE 1280000                /* size of buffer when receiving requests */
 
@@ -153,7 +153,6 @@ void * serverthread(void * psock)
 
    printf("SERVER thread: %s", buf);
 
-   //send(sock,buf,strlen(buf),0);
    close(sock);
    pthread_exit(0);
 }    
@@ -172,7 +171,7 @@ void sendFile(int sock, char *filename) {
   long fpSize = ftell(fp);  // get size of file
   fprintf(stderr, "The size of the file is %ld\n", fpSize);
   rewind(fp);               // seek back to beginning of file
-
+	
   char *fileBytes;
   fileBytes = (char *) malloc(fpSize + 1);
 	

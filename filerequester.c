@@ -42,7 +42,6 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 	
-
 	// Receive the string back from the server
 	uint64_t totalBytes = 0;
 	char buffer[BUFSIZE]; // I/O Buffer
