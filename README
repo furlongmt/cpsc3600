@@ -1,4 +1,4 @@
-Note: To compile, use gcc -o <executable> <name of file> -lpthread
+Note: To compile, use make <name of program> or gcc -o <executable> <name of file> -lpthread
 
 For multiserver, run "./multiserver", if the executable is multiserver obviously, and the default port is 1999.
 

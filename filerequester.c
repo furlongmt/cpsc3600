@@ -6,11 +6,11 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-//#define BUFSIZE 1280000
+#define BUFSIZE 1280000
 #define FILESIZE 256
 
-int SetupTCPClientSocket(const char *host, const char *service);	/* function prototype to set up tcp socket */
-FILE * openFile(char *fileName);					/* function prototype to write file to system */
+int SetupTCPClientSocket(const char *host, const char *service);		/* function prototype to set up tcp socket */
+//void writeFile(char *fileName, char *fileContents, size_t fileSize);	/* function prototype to write file to system */
 
 int main(int argc, char *argv[]) {
 
@@ -42,24 +42,46 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 	
-
-	// Receive the file back from the server
-	unsigned int totalBytes = 0;
-	char buffer[FILESIZE]; // I/O Buffer
-	FILE *fp = openFile(filename);
-
-	while((numBytes = recv(sock, buffer, FILESIZE, 0)) > 0) {
+	// Receive the string back from the server
+	uint64_t totalBytes = 0;
+	char buffer[BUFSIZE]; // I/O Buffer
+	//fputs("Received: ", stdout);
+	
+	uint64_t fileSize;
+	recv(sock, &fileSize, sizeof(uint64_t), 0);
+	fileSize = ntohl(fileSize);
+	
+	FILE *fp = fopen(filename, "w+b");
+	
+	if(fp == NULL) {
+		fprintf(stderr, "Cannot save file because it won't open\n");
+	}
+	
+	while(totalBytes < fileSize) {
+		size_t readSize = fileSize;
+		
+		if (readSize > BUFSIZE)
+			readSize = BUFSIZE;
+		
+		numBytes = recv(sock, buffer, readSize, 0);
 		if(numBytes <= 0) {
 			printf("Number of bytes in response is less than or equal to zero\n");
 			exit(1);
 		}
-		fwrite(buffer, 1, numBytes, fp);
-	}
-
+		
+		fwrite(buffer, sizeof(char), numBytes, fp);
+		totalBytes += numBytes;
+		//buffer[numBytes] = '\0'; // Terminate the string
+		//fputs(buffer, stdout); // Print the buffer
+	}	
+	
+	fclose(fp);
+	fprintf(stderr, "The total number of bytes is %zd\n", totalBytes);
+	//writeFile(filename, buffer, numBytes);
 	fprintf(stderr, "The file %s was successfully written\n", filename);
 	close(sock);
-	close(fp);
-	exit(0);
+	//exit(0);
+	return 0;
 }
 
 int SetupTCPClientSocket(const char *host, const char *service) {
@@ -95,14 +117,4 @@ int SetupTCPClientSocket(const char *host, const char *service) {
 
   freeaddrinfo(servAddr); // Free addrinfo allocated in getaddrinfo()
   return sock;
-}
-
-FILE * openFile(char *fileName) {
-	FILE *fp = fopen(fileName, "w+b");
-
-	if(fp == NULL) {
-		fprintf(stderr, "Cannot save file because it won't open\n");
-	}
-
-	return fp;
 }
