@@ -9,8 +9,8 @@
 #define BUFSIZE 1280000
 #define FILESIZE 256
 
-int SetupTCPClientSocket(const char *host, const char *service);	/* function prototype to set up tcp socket */
-void writeFile(char *fileName, char *fileContents);					/* function prototype to write file to system */
+int SetupTCPClientSocket(const char *host, const char *service);		/* function prototype to set up tcp socket */
+//void writeFile(char *fileName, char *fileContents, size_t fileSize);	/* function prototype to write file to system */
 
 int main(int argc, char *argv[]) {
 
@@ -44,26 +44,45 @@ int main(int argc, char *argv[]) {
 	
 
 	// Receive the string back from the server
-	unsigned int totalBytes = 0;
+	uint64_t totalBytes = 0;
 	char buffer[BUFSIZE]; // I/O Buffer
 	//fputs("Received: ", stdout);
 	
-	//while(totalBytes < strlen(filename)) {
-	numBytes = recv(sock, buffer, BUFSIZE - 1, 0);
-	if(numBytes <= 0) {
-		printf("Number of bytes in response is less than or equal to zero\n");
-		exit(1);
+	uint64_t fileSize;
+	recv(sock, &fileSize, sizeof(uint64_t), 0);
+	fileSize = ntohl(fileSize);
+	
+	FILE *fp = fopen(filename, "w+b");
+	
+	if(fp == NULL) {
+		fprintf(stderr, "Cannot save file because it won't open\n");
 	}
-	//	totalBytes += numBytes;
-	buffer[numBytes] = '\0'; // Terminate the string
-	//fputs(buffer, stdout); // Print the buffer
-	//}	
-
-	//fprintf(stderr, "The total number of bytes is %d\n", numBytes);
-	writeFile("test.c", buffer);
+	
+	while(totalBytes < fileSize) {
+		size_t readSize = fileSize;
+		
+		if (readSize > BUFSIZE)
+			readSize = BUFSIZE;
+		
+		numBytes = recv(sock, buffer, readSize, 0);
+		if(numBytes <= 0) {
+			printf("Number of bytes in response is less than or equal to zero\n");
+			exit(1);
+		}
+		
+		fwrite(buffer, sizeof(char), numBytes, fp);
+		totalBytes += numBytes;
+		//buffer[numBytes] = '\0'; // Terminate the string
+		//fputs(buffer, stdout); // Print the buffer
+	}	
+	
+	fclose(fp);
+	fprintf(stderr, "The total number of bytes is %zd\n", totalBytes);
+	//writeFile(filename, buffer, numBytes);
 	fprintf(stderr, "The file %s was successfully written\n", filename);
 	close(sock);
-	exit(0);
+	//exit(0);
+	return 0;
 }
 
 int SetupTCPClientSocket(const char *host, const char *service) {
@@ -99,16 +118,4 @@ int SetupTCPClientSocket(const char *host, const char *service) {
 
   freeaddrinfo(servAddr); // Free addrinfo allocated in getaddrinfo()
   return sock;
-}
-
-void writeFile(char *fileName, char *fileContents) {
-	FILE *fp = fopen(fileName, "w+b");
-
-	if(fp == NULL) {
-		fprintf(stderr, "Cannot save file because it won't open\n");
-	}
-
-	fwrite(fileContents, sizeof(char), strlen(fileContents), fp);
-
-	close(fp);
 }

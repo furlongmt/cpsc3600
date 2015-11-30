@@ -4,9 +4,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <unistd.h>
 
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void * serverthread(void * parm);        /* thread function prototype    */
@@ -44,15 +46,15 @@ int visits =  0;                        /* global variable to count client conne
 **************************************************************************
 */
 
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
-     struct   hostent   *ptrh;     /* pointer to a host table entry */
+     //struct   hostent   *ptrh;     /* pointer to a host table entry */
      struct   protoent  *ptrp;     /* pointer to a protocol table entry */
      struct   sockaddr_in sad;     /* structure to hold server's address */
      struct   sockaddr_in cad;     /* structure to hold client's address */
      int      sd, sd2;             /* socket descriptors */
      int      port;                /* protocol port number */
-     int      alen;                /* length of address */
+     unsigned int        alen;     /* length of address */
      pthread_t  tid;             /* variable to hold thread ID */
 
      pthread_mutex_init(&mut, NULL);
@@ -78,7 +80,7 @@ main (int argc, char *argv[])
 
      /* Map TCP transport protocol name to protocol number */
      
-     if ( ((int)(ptrp = getprotobyname("tcp"))) == 0)  {
+     if ( ((ptrp = getprotobyname("tcp"))) == NULL)  {
                      fprintf(stderr, "cannot map \"tcp\" to protocol number");
                      exit (1);
      }
@@ -168,12 +170,15 @@ void sendFile(int sock, char *filename) {
 
   fseek(fp, 0, SEEK_END);   // seek to end of file
   long fpSize = ftell(fp);  // get size of file
-  fprintf(stderr, "The size of the file is %d\n", fpSize);
+  fprintf(stderr, "The size of the file is %ld\n", fpSize);
   rewind(fp);               // seek back to beginning of file
 
   char *fileBytes;
   fileBytes = (char *) malloc(fpSize + 1);
-
+	
+	uint64_t fileSize = htonl(fpSize);
+	send(sock, &fileSize, sizeof(uint64_t), 0);
+	
   fread(fileBytes, fpSize, 1, fp);
   int sent = send(sock, fileBytes, fpSize, 0);
   fprintf(stderr, "But it only sent %d bytes \n", sent);
